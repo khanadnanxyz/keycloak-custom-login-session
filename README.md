@@ -1,3 +1,5 @@
+[![Maven Package](https://github.com/khanadnanxyz/keycloak-custom-login-session/actions/workflows/maven-publish.yml/badge.svg)](https://github.com/khanadnanxyz/keycloak-custom-login-session/actions/workflows/maven-publish.yml)
+
 # keycloak-custom-login-session
 
 To install and run the realm-restapi-extension :
