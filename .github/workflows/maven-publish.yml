@@ -39,3 +39,4 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: target/keycloak-custom-login-session.jar
         asset_name: keycloak-custom-login-session.jar
+        asset_content_type: application/java-archive
