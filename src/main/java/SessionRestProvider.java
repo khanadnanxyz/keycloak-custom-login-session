@@ -37,7 +37,6 @@ public class SessionRestProvider implements RealmResourceProvider {
     @GET
     @Produces("text/plain; charset=utf-8")
     public String get() {
-        System.out.println("printing here");
         String name = keycloakSession.getContext().getRealm().getDisplayName();
         if (name == null) {
             name = keycloakSession.getContext().getRealm().getName();
@@ -47,13 +46,13 @@ public class SessionRestProvider implements RealmResourceProvider {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("sso")
-    public Response sso(@Context final HttpRequest request) {
+    @Path("set_session")
+    public Response set_session(@Context final HttpRequest request) {
         final HttpHeaders headers = request.getHttpHeaders();
         final String authorization = headers.getHeaderString(HttpHeaders.AUTHORIZATION);
+        final String redirect_url = headers.getHeaderString("redirect_url");
         final String[] value = authorization.split(" ");
         final String accessToken = value[1];
-        System.out.println(accessToken);
         final AccessToken token = Tokens.getAccessToken(accessToken, keycloakSession);
 
 
@@ -71,8 +70,10 @@ public class SessionRestProvider implements RealmResourceProvider {
 
         AuthenticationManager.createLoginCookie(keycloakSession, realm, user, userSession, uriInfo, clientConnection);
 
-        URI uri = URI.create("https://stage.rstore.com.bd/");
-
+        if (redirect_url == null) {
+            return Response.noContent().build();
+        }
+        URI uri = URI.create(redirect_url);
         return Response.status(Response.Status.MOVED_PERMANENTLY).location(uri).build();
     }
 
