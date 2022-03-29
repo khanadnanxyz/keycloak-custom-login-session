@@ -5,7 +5,7 @@ import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
 
 public class SessionRestProviderFactory implements RealmResourceProviderFactory {
-    public static final String ID = "customer-login-session";
+    public static final String ID = "custom-login-session";
 
     @Override
     public RealmResourceProvider create(KeycloakSession keycloakSession) {

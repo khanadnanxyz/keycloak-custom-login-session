@@ -16,6 +16,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.*;
 import java.net.URI;
+import java.util.List;
 
 public class SessionRestProvider implements RealmResourceProvider {
     private final KeycloakSession keycloakSession;
@@ -50,12 +51,33 @@ public class SessionRestProvider implements RealmResourceProvider {
     public Response set_session(@Context final HttpRequest request) {
         final HttpHeaders headers = request.getHttpHeaders();
         final String authorization = headers.getHeaderString(HttpHeaders.AUTHORIZATION);
-        final String redirect_url = headers.getHeaderString("redirect_url");
+        final String redirectUrl = headers.getHeaderString("redirect-url");
         final String[] value = authorization.split(" ");
         final String accessToken = value[1];
+        return getResponse(accessToken, redirectUrl);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("set_sso")
+    public Response set_sso(@Context final HttpRequest request) {
+
+        UriInfo uriParam = request.getUri();
+        MultivaluedMap<String, String> queryMap = uriParam.getQueryParameters();
+        List<String> tokenParam = queryMap.get("token");
+        List<String> urlParam = queryMap.get("redirect-url");
+
+        System.out.println(tokenParam.get(0));
+        System.out.println(urlParam.get(0));
+
+        final String accessToken = tokenParam.get(0);
+        final String redirectUrl = urlParam.get(0);
+
+        return getResponse(accessToken, redirectUrl);
+    }
+
+    private Response getResponse(String accessToken, String redirectUrl) {
         final AccessToken token = Tokens.getAccessToken(accessToken, keycloakSession);
-
-
         if (token == null) {
             throw new ErrorResponseException(Errors.INVALID_TOKEN, "Invalid access token", Response.Status.UNAUTHORIZED);
         }
@@ -70,10 +92,10 @@ public class SessionRestProvider implements RealmResourceProvider {
 
         AuthenticationManager.createLoginCookie(keycloakSession, realm, user, userSession, uriInfo, clientConnection);
 
-        if (redirect_url == null) {
+        if (redirectUrl == null) {
             return Response.noContent().build();
         }
-        URI uri = URI.create(redirect_url);
+        URI uri = URI.create(redirectUrl);
         return Response.status(Response.Status.MOVED_PERMANENTLY).location(uri).build();
     }
 
