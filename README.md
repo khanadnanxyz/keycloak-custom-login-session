@@ -11,7 +11,7 @@
 **To check if the extension has perfectly deployed:**
 
 * In your server info you should find 'customer-login-session' as realm-restapi-extension in the provider section.
-* Now if you hit http://`<keycloak-host>`:`<keycloak-port>`/auth/realms/`<your-realm-name>`/customer-login-session/.  
+* Now if you hit http://`<keycloak-host>`:`<keycloak-port>`/auth/realms/`<your-realm-name>`/custom-login-session.  
   You should see Hello `<your-realm-name>` on the browser.
 
 **How it works :**
@@ -25,7 +25,7 @@ http://`<keycloak-host>`:`<keycloak-port>`/auth/realms/<your-realm-name>/custome
 
 ***Method #2***
 Pass below (key, values) in the headers, making a GET request to  
-http://`<keycloak-host>`:`<keycloak-port>`/auth/realms/<your-realm-name>/customer-login-session/set_session
+http://`<keycloak-host>`:`<keycloak-port>`/auth/realms/<your-realm-name>/custom-login-session/set_session
 * Authorization : Bearer `<user-token>`
 * Redirect_url : `<redirect_url>` (Optional)
 
