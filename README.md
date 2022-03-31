@@ -21,7 +21,7 @@ Pass below (key, values) in the url params, making a GET request to -
 
 > creates a browser session for SSO
 
-http://`<keycloak-host>`:`<keycloak-port>`/auth/realms/<your-realm-name>/customer-login-session/set_sso?token=`<user-token>`&redirect-url=`<redirect_url>`
+http://`<keycloak-host>`:`<keycloak-port>`/auth/realms/<your-realm-name>/custom-login-session/set_sso?token=`<user-token>`&redirect-url=`<redirect_url>`
 
 ***Method #2***
 Pass below (key, values) in the headers, making a GET request to  
