@@ -17,6 +17,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.*;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class SessionRestProvider implements RealmResourceProvider {
     private final KeycloakSession keycloakSession;
@@ -36,7 +38,7 @@ public class SessionRestProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Produces("text/plain; charset=utf-8")
+    @Produces(MediaType.TEXT_PLAIN)
     public String get() {
         String name = keycloakSession.getContext().getRealm().getDisplayName();
         if (name == null) {
@@ -50,33 +52,47 @@ public class SessionRestProvider implements RealmResourceProvider {
     @Path("set_session")
     public Response set_session(@Context final HttpRequest request) {
         final HttpHeaders headers = request.getHttpHeaders();
+        final String authSessionId = getAuthSessionId(headers);
         final String authorization = headers.getHeaderString(HttpHeaders.AUTHORIZATION);
         final String redirectUrl = headers.getHeaderString("redirect-url");
         final String[] value = authorization.split(" ");
         final String accessToken = value[1];
-        return getResponse(accessToken, redirectUrl);
+        return getResponse(accessToken, redirectUrl, authSessionId);
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("set_sso")
     public Response set_sso(@Context final HttpRequest request) {
+        String authSessionId = getAuthSessionId(request.getHttpHeaders());
 
         UriInfo uriParam = request.getUri();
         MultivaluedMap<String, String> queryMap = uriParam.getQueryParameters();
         List<String> tokenParam = queryMap.get("token");
-        List<String> urlParam = queryMap.get("redirect-url");
-
-        System.out.println(tokenParam.get(0));
-        System.out.println(urlParam.get(0));
+        List<String> urlParam = queryMap.get("redirect_url");
 
         final String accessToken = tokenParam.get(0);
         final String redirectUrl = urlParam.get(0);
 
-        return getResponse(accessToken, redirectUrl);
+        return getResponse(accessToken, redirectUrl, authSessionId);
     }
 
-    private Response getResponse(String accessToken, String redirectUrl) {
+    private String getAuthSessionId(HttpHeaders httpHeaders) {
+        String authSessionId = UUID.randomUUID().toString();
+        MultivaluedMap<String, String> requestHeaders = httpHeaders.getRequestHeaders();
+        if (requestHeaders.containsKey(HttpHeaders.COOKIE)) {
+            String cookie = requestHeaders.get(HttpHeaders.COOKIE).get(0);
+            String[] cookies = cookie.split("; ");
+            for (String item : cookies) {
+                if (item.startsWith("AUTH_SESSION_ID=")) {
+                    authSessionId = item.split("=")[1];
+                }
+            }
+        }
+        return authSessionId;
+    }
+
+    private Response getResponse(String accessToken, String redirectUrl, String authSessionId) {
         final AccessToken token = Tokens.getAccessToken(accessToken, keycloakSession);
         if (token == null) {
             throw new ErrorResponseException(Errors.INVALID_TOKEN, "Invalid access token", Response.Status.UNAUTHORIZED);
@@ -89,14 +105,30 @@ public class SessionRestProvider implements RealmResourceProvider {
         final UserModel user = keycloakSession.users().getUserById(token.getSubject(), realm);
 
         final UserSessionModel userSession = keycloakSession.sessions().getUserSession(realm, token.getSessionState());
+        Map<String, String> notes = userSession.getNotes();
 
-        AuthenticationManager.createLoginCookie(keycloakSession, realm, user, userSession, uriInfo, clientConnection);
-
-        if (redirectUrl == null) {
-            return Response.noContent().build();
+        String sessionId = "";
+        if (notes.containsKey("SESSION_ID")) {
+            sessionId = notes.get("SESSION_ID");
         }
-        URI uri = URI.create(redirectUrl);
-        return Response.status(Response.Status.MOVED_PERMANENTLY).location(uri).build();
+
+        if (sessionId.isEmpty()) {
+            // no browser session was created previously
+            AuthenticationManager.createLoginCookie(keycloakSession, realm, user, userSession, uriInfo, clientConnection);
+            userSession.setNote("SESSION_ID", authSessionId);
+        } else if (!sessionId.equals(authSessionId)) {
+            throw new ErrorResponseException(Errors.INVALID_TOKEN, "Session already initiated", Response.Status.UNAUTHORIZED);
+        }
+
+        Response response;
+        if (redirectUrl != null) {
+            URI uri = URI.create(redirectUrl);
+            response = Response.status(Response.Status.MOVED_PERMANENTLY).location(uri).build();
+        } else {
+            response = Response.noContent().build();
+        }
+
+        return response;
     }
 
 }
