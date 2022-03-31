@@ -41,7 +41,6 @@ public class SessionRestProvider implements RealmResourceProvider {
     @Produces(MediaType.TEXT_PLAIN)
     public String get() {
         String name = keycloakSession.getContext().getRealm().getDisplayName();
-        System.out.println(name);
         if (name == null) {
             name = keycloakSession.getContext().getRealm().getName();
         }
@@ -72,9 +71,6 @@ public class SessionRestProvider implements RealmResourceProvider {
         List<String> tokenParam = queryMap.get("token");
         List<String> urlParam = queryMap.get("redirect_url");
 
-        System.out.println(tokenParam.get(0));
-        System.out.println(urlParam.get(0));
-
         final String accessToken = tokenParam.get(0);
         final String redirectUrl = urlParam.get(0);
 
@@ -88,13 +84,11 @@ public class SessionRestProvider implements RealmResourceProvider {
             String cookie = requestHeaders.get(HttpHeaders.COOKIE).get(0);
             String[] cookies = cookie.split("; ");
             for (String item : cookies) {
-                System.out.println(item);
                 if (item.startsWith("AUTH_SESSION_ID=")) {
                     authSessionId = item.split("=")[1];
                 }
             }
         }
-        System.out.println(authSessionId);
         return authSessionId;
     }
 
@@ -112,7 +106,6 @@ public class SessionRestProvider implements RealmResourceProvider {
 
         final UserSessionModel userSession = keycloakSession.sessions().getUserSession(realm, token.getSessionState());
         Map<String, String> notes = userSession.getNotes();
-        System.out.println(notes);
 
         String sessionId = "";
         if (notes.containsKey("SESSION_ID")) {
